@@ -6,7 +6,14 @@ import _ from 'lodash';
 class SellCSV extends Component {
   constructor(props) {
     super(props);
-    this.state = {data: [], rentalFileLists: [], referenceData: [], results: []};
+    this.state = {
+      interestRate: 4.5,
+      data: [],
+      rentalFileLists: [],
+      referenceData: [],
+      results: [],
+    };
+    this.handleInputChange = this.handleInputChange.bind(this);
   }
 
   csvToObj(csv) {
@@ -48,7 +55,8 @@ class SellCSV extends Component {
     if (_.isNil(_.get(row, 'Current Price'))) {
       return;
     }
-    row.financeCost = _.round(this.convertToNumber(_.get(row, 'Current Price')) / 1000 * 6, 2);
+    const interestRate = this.state.interestRate;
+    row.financeCost = _.round(this.convertToNumber(_.get(row, 'Current Price')) / 1000 * interestRate, 2);
     return row;
   }
 
@@ -61,10 +69,8 @@ class SellCSV extends Component {
   }
 
   totalCost = (row) => {
-    if (_.isNil(_.get(row, 'Condo/Coop Fee'))) {
-      return;
-    }
-    const condoFee = this.convertToNumber(_.get(row, 'Condo/Coop Fee'));
+    const condoFee = _.isNil(_.get(row, 'Condo/Coop Fee')) ? 0 : this.convertToNumber(_.get(row, 'Condo/Coop Fee'));
+    const hoaFee = _.isNil(_.get(row, 'HOA Fee')) ? 0 : this.convertToNumber(_.get(row, 'Condo/Coop Fee'));
     row.totalCost =  _.round(_.get(row, 'financeCost') + _.get(row, 'monthlyTax') + condoFee);
     return row;
   }
@@ -100,6 +106,16 @@ class SellCSV extends Component {
     return row;
   }
 
+  ratio = (row) => {
+    const taxAssessedValue = this.convertToNumber(_.get(row, 'Tax Assessed Value'));
+    const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
+    if (_.isNil(taxAssessedValue) && _.isNil(currentPrice)) {
+      return;
+    }
+    row.ratio = _.round(taxAssessedValue / currentPrice, 2);
+    return row;
+  }
+
   getCSV = () => {
     const data = this.state.data;
     if (data === null) return;
@@ -110,6 +126,7 @@ class SellCSV extends Component {
     results = _.map(results, this.rentalAvgIncome);
     results = _.map(results, this.returnRate);
     results = _.map(results, this.nominalAmount);
+    results = _.map(results, this.ratio);
     this.setState({results: results});
   }
 
@@ -137,9 +154,29 @@ class SellCSV extends Component {
 
   }
 
+  handleInputChange(e) {
+    const target = e.target;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    const name = target.name;
+
+    this.setState({
+      [name]: value
+    });
+  }
+
   render() {
     return (
       <div>
+        <form>
+          <label>Input Interest Rate (default is 4.5):
+          <input
+            name="interestRate"
+            type="number"
+            value={this.state.interestRate}
+            onChange={this.handleInputChange} />
+          </label>
+          <br />
+        </form>
         <div>Upload Sell CSV for Calculation</div>
         <input
           type="file"
