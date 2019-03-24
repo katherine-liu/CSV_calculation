@@ -55,11 +55,12 @@ class SellCSV extends Component {
   }
 
   financeCost = (row) => {
-    if (_.isNil(_.get(row, 'Current Price'))) {
+    const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
+    if (_.isNil(currentPrice)) {
       return;
     }
     const ratioPerThousand = this.state.ratioPerThousand;
-    row.financeCost = _.round(this.convertToNumber(_.get(row, 'Current Price')) / 1000 * ratioPerThousand, 2);
+    row.financeCost = _.round(currentPrice / 1000 * ratioPerThousand, 2);
     return row;
   }
 
@@ -74,7 +75,7 @@ class SellCSV extends Component {
   totalCost = (row) => {
     const condoFee = _.isNil(_.get(row, 'Condo/Coop Fee')) ? 0 : this.convertToNumber(_.get(row, 'Condo/Coop Fee'));
     const hoaFee = _.isNil(_.get(row, 'HOA Fee')) ? 0 : this.convertToNumber(_.get(row, 'Condo/Coop Fee'));
-    row.totalCost =  _.round(_.get(row, 'financeCost') + _.get(row, 'monthlyTax') + condoFee);
+    row.totalCost =  _.round(_.get(row, 'financeCost') + _.get(row, 'monthlyTax') + condoFee + hoaFee);
     return row;
   }
 
@@ -151,7 +152,7 @@ class SellCSV extends Component {
     const p = currentPrice * 0.8;
     const r = this.state.interestRate / 100;
     const n = this.state.mortgagePeriod;
-    row.paymentAmount = (p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
+    row.paymentAmount = _.round((p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1), 2);
     return row;
   }
 
