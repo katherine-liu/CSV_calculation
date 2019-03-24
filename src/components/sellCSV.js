@@ -82,7 +82,7 @@ class SellCSV extends Component {
   rentalAvgIncome = (row) => {
     const currentSQFT = this.convertToNumber(_.get(row, 'Above Grade Finished SQFT'));
     const currentBed = this.convertToNumber(_.get(row, 'Beds'));
-    const currentSubdivision = _.get(row, 'Subdivision/Neighborhood');
+    const currentSubdivision = _.get(row, 'Legal Subdivision') ? _.get(row, 'Legal Subdivision') : _.get(row, 'Subdivision/Neighborhood');
     if (_.isNil(currentSQFT)) {
       return;
     }
@@ -90,7 +90,7 @@ class SellCSV extends Component {
     let qualifiedSQFTs = _.filter(data, (o, i) => {
       const sqft = this.convertToNumber(_.get(data[i], 'Above Grade Finished SQFT'));
       const bed = this.convertToNumber(_.get(data[i], 'Beds'));
-      const subdivision = _.get(data[i], 'Subdivision/Neighborhood');
+      const subdivision = _.get(data[i], 'Legal Subdivision') ? _.get(data[i], 'Legal Subdivision') : _.get(data[i], 'Subdivision/Neighborhood');
       const adjustedSQFT = this.state.adjustedSQFT;
       return (_.isEqual(subdivision, currentSubdivision) && _.isEqual(currentBed, bed) && (sqft > currentSQFT - adjustedSQFT && sqft < currentSQFT + adjustedSQFT));
     });
@@ -152,7 +152,8 @@ class SellCSV extends Component {
     const p = currentPrice * 0.8;
     const r = this.state.interestRate / 100;
     const n = this.state.mortgagePeriod;
-    row.paymentAmount = _.round((p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1), 2);
+    const a = (p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
+    row.paymentAmount = _.round(a / 12, 2);
     return row;
   }
 
@@ -161,6 +162,7 @@ class SellCSV extends Component {
     if (data === null) return;
     let results = [];
     results = _.map(data, this.financeCost);
+    results = _.map(results, this.paymentAmount);
     results = _.map(results, this.monthlyTax);
     results = _.map(results, this.totalCost);
     results = _.map(results, this.rentalAvgIncome);
@@ -169,7 +171,6 @@ class SellCSV extends Component {
     results = _.map(results, this.ratio);
     results = _.map(results, this.depreciation);
     results = _.map(results, this.apprecitation);
-    results = _.map(results, this.paymentAmount);
     this.setState({results: results});
   }
 
