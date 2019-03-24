@@ -8,6 +8,8 @@ class SellCSV extends Component {
     super(props);
     this.state = {
       interestRate: 4.5,
+      mortgagePeriod: 30,
+      ratioPerThousand: 5.07,
       adjustedSQFT: 200,
       data: [],
       rentalFileLists: [],
@@ -56,8 +58,8 @@ class SellCSV extends Component {
     if (_.isNil(_.get(row, 'Current Price'))) {
       return;
     }
-    const interestRate = this.state.interestRate;
-    row.financeCost = _.round(this.convertToNumber(_.get(row, 'Current Price')) / 1000 * interestRate, 2);
+    const ratioPerThousand = this.state.ratioPerThousand;
+    row.financeCost = _.round(this.convertToNumber(_.get(row, 'Current Price')) / 1000 * ratioPerThousand, 2);
     return row;
   }
 
@@ -78,7 +80,6 @@ class SellCSV extends Component {
 
   rentalAvgIncome = (row) => {
     const currentSQFT = this.convertToNumber(_.get(row, 'Above Grade Finished SQFT'));
-    console.log(_.get(row, 'Above Grade Finished SQFT'));
     const currentBed = this.convertToNumber(_.get(row, 'Beds'));
     const currentSubdivision = _.get(row, 'Subdivision/Neighborhood');
     if (_.isNil(currentSQFT)) {
@@ -124,6 +125,36 @@ class SellCSV extends Component {
     return row;
   }
 
+  depreciation = (row) => {
+    const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
+    if (_.isNil(currentPrice)) {
+      return;
+    }
+    row.depreciation = _.round((currentPrice / 27.5) * 0.3, 2);
+    return row;
+  }
+
+  apprecitation = (row) => {
+    const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
+    if (_.isNil(currentPrice)) {
+      return;
+    }
+    row.apprecitation = _.round(currentPrice * 0.03, 2);
+    return row;
+  }
+
+  paymentAmount = (row) => {
+    const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
+    if (_.isNil(currentPrice)) {
+      return;
+    }
+    const p = currentPrice * 0.8;
+    const r = this.state.interestRate / 100;
+    const n = this.state.mortgagePeriod;
+    row.paymentAmount = (p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
+    return row;
+  }
+
   getCSV = () => {
     const data = this.state.data;
     if (data === null) return;
@@ -135,6 +166,9 @@ class SellCSV extends Component {
     results = _.map(results, this.returnRate);
     results = _.map(results, this.nominalAmount);
     results = _.map(results, this.ratio);
+    results = _.map(results, this.depreciation);
+    results = _.map(results, this.apprecitation);
+    results = _.map(results, this.paymentAmount);
     this.setState({results: results});
   }
 
@@ -181,6 +215,22 @@ class SellCSV extends Component {
             name="interestRate"
             type="number"
             value={this.state.interestRate}
+            onChange={this.handleInputChange} />
+          </label>
+          <br />
+          <label>mortgage Period (default is 30 years):
+          <input
+            name="mortgagePeriod"
+            type="number"
+            value={this.state.mortgagePeriod}
+            onChange={this.handleInputChange} />
+          </label>
+          <br />
+          <label>Input Ratio per 1000 (default is 5.07):
+          <input
+            name="ratioPerThousand"
+            type="number"
+            value={this.state.ratioPerThousand}
             onChange={this.handleInputChange} />
           </label>
           <br />
