@@ -8,6 +8,7 @@ class SellCSV extends Component {
     super(props);
     this.state = {
       interestRate: 4.5,
+      adjustedSQFT: 200,
       data: [],
       rentalFileLists: [],
       referenceData: [],
@@ -76,7 +77,8 @@ class SellCSV extends Component {
   }
 
   rentalAvgIncome = (row) => {
-    const currentSQFT = this.convertToNumber(_.get(row, 'Total SQFT'));
+    const currentSQFT = this.convertToNumber(_.get(row, 'Above Grade Finished SQFT'));
+    console.log(_.get(row, 'Above Grade Finished SQFT'));
     const currentBed = this.convertToNumber(_.get(row, 'Beds'));
     const currentSubdivision = _.get(row, 'Subdivision/Neighborhood');
     if (_.isNil(currentSQFT)) {
@@ -84,10 +86,11 @@ class SellCSV extends Component {
     }
     const data = this.state.referenceData;
     let qualifiedSQFTs = _.filter(data, (o, i) => {
-      const sqft = this.convertToNumber(_.get(data[i], 'Total SQFT'));
+      const sqft = this.convertToNumber(_.get(data[i], 'Above Grade Finished SQFT'));
       const bed = this.convertToNumber(_.get(data[i], 'Beds'));
       const subdivision = _.get(data[i], 'Subdivision/Neighborhood');
-      return (_.isEqual(currentSubdivision, subdivision) && _.isEqual(currentBed, bed) && (sqft > currentSQFT - 200 && sqft < currentSQFT + 200));
+      const adjustedSQFT = this.state.adjustedSQFT;
+      return (_.isEqual(subdivision, currentSubdivision) && _.isEqual(currentBed, bed) && (sqft > currentSQFT - adjustedSQFT && sqft < currentSQFT + adjustedSQFT));
     });
     const sumPrice = _.sumBy(qualifiedSQFTs, (o) => {
       return this.convertToNumber(_.get(o, 'Current Price'));
@@ -102,7 +105,12 @@ class SellCSV extends Component {
   }
 
   nominalAmount = (row) => {
-    row.nominalAmount = _.round(_.get(row, 'rentalAvgIncome') - _.get(row, 'totalCost'), 2);
+    const currentSQFT = _.get(row, 'rentalAvgIncome');
+    const totalCost = _.get(row, 'totalCost');
+    if (_.isNil(currentSQFT) || _.isNil(totalCost)) {
+      return;
+    }
+    row.nominalAmount = _.round(currentSQFT - totalCost, 2);
     return row;
   }
 
@@ -176,6 +184,13 @@ class SellCSV extends Component {
             onChange={this.handleInputChange} />
           </label>
           <br />
+          <label>Input Adjusted SQFT (default is 200):
+          <input
+            name="adjustedSQFT"
+            type="number"
+            value={this.state.adjustedSQFT}
+            onChange={this.handleInputChange} />
+          </label>
         </form>
         <div>Upload Sell CSV for Calculation</div>
         <input
