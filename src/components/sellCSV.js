@@ -144,16 +144,19 @@ class SellCSV extends Component {
     return row;
   }
 
+  monthlyPayment(loanAmount, apr, mortgagePeriod) {
+    const r = apr / 12;
+    const n = mortgagePeriod * 12;
+    const m = loanAmount * (r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
+    return Math.round(m * 100) / 100;
+  }
+
   paymentAmount = (row) => {
     const currentPrice = this.convertToNumber(_.get(row, 'Current Price'));
     if (_.isNil(currentPrice)) {
       return;
     }
-    const p = currentPrice * 0.8;
-    const r = this.state.interestRate / 100;
-    const n = this.state.mortgagePeriod;
-    const a = (p * r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
-    row.paymentAmount = _.round(a / 12, 2);
+    row.paymentAmount = this.monthlyPayment(currentPrice, this.state.interestRate / 100, this.state.mortgagePeriod);
     return row;
   }
 
@@ -202,10 +205,17 @@ class SellCSV extends Component {
     const target = e.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
-
     this.setState({
       [name]: value
     });
+
+    if (name === 'interestRate') {
+      const ratioPerThousand = this.monthlyPayment(1000, this.state.interestRate / 100, this.state.mortgagePeriod);
+      this.setState({
+        ratioPerThousand: ratioPerThousand
+      });
+    }
+
   }
 
   render() {
@@ -213,37 +223,37 @@ class SellCSV extends Component {
       <div>
         <form>
           <label>Input Interest Rate (default is 4.5):
-          <input
-            name="interestRate"
-            type="number"
-            value={this.state.interestRate}
-            onChange={this.handleInputChange} />
+            <input
+              name="interestRate"
+              type="number"
+              value={this.state.interestRate}
+              onChange={this.handleInputChange} />
           </label>
           <br />
+
           <label>mortgage Period (default is 30 years):
-          <input
-            name="mortgagePeriod"
-            type="number"
-            value={this.state.mortgagePeriod}
-            onChange={this.handleInputChange} />
+            <input
+              name="mortgagePeriod"
+              type="number"
+              value={this.state.mortgagePeriod}
+              onChange={this.handleInputChange} />
           </label>
           <br />
+
           <label>Input Ratio per 1000 (default is 5.07):
-          <input
-            name="ratioPerThousand"
-            type="number"
-            value={this.state.ratioPerThousand}
-            onChange={this.handleInputChange} />
+            <strong>{this.state.ratioPerThousand}</strong>
           </label>
           <br />
+
           <label>Input Adjusted SQFT (default is 200):
-          <input
-            name="adjustedSQFT"
-            type="number"
-            value={this.state.adjustedSQFT}
-            onChange={this.handleInputChange} />
+            <input
+              name="adjustedSQFT"
+              type="number"
+              value={this.state.adjustedSQFT}
+              onChange={this.handleInputChange} />
           </label>
         </form>
+
         <div>Upload Sell CSV for Calculation</div>
         <input
           type="file"
