@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { CSVLink, CSVDownload } from "react-csv";
-import { Button } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 import _ from 'lodash';
 
 class SellCSV extends Component {
@@ -208,11 +208,12 @@ class SellCSV extends Component {
     this.setState({
       [name]: value
     });
-
     if (name === 'interestRate') {
-      const ratioPerThousand = this.monthlyPayment(1000, this.state.interestRate / 100, this.state.mortgagePeriod);
-      this.setState({
-        ratioPerThousand: ratioPerThousand
+      this.setState((previousState, currentProps) => {
+          if (_.chain(previousState.interestRate).toNumber().isNumber().value()) {
+            const ratioPerThousand = this.monthlyPayment(1000, previousState.interestRate / 100, previousState.mortgagePeriod);
+            return { ...previousState, ratioPerThousand: ratioPerThousand };
+          }
       });
     }
 
@@ -220,68 +221,89 @@ class SellCSV extends Component {
 
   render() {
     return (
-      <div>
-        <form>
-          <label>Input Interest Rate (default is 4.5):
-            <input
-              name="interestRate"
-              type="number"
-              value={this.state.interestRate}
-              onChange={this.handleInputChange} />
-          </label>
-          <br />
+        <Form>
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              Input Interest Rate (default is 4.5):
+            </Form.Label>
+            <Col sm="9">
+              <Form.Control name="interestRate" value={this.state.interestRate} onChange={this.handleInputChange} />
+            </Col>
+          </Form.Group>
 
-          <label>mortgage Period (default is 30 years):
-            <input
-              name="mortgagePeriod"
-              type="number"
-              value={this.state.mortgagePeriod}
-              onChange={this.handleInputChange} />
-          </label>
-          <br />
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              mortgage Period:
+            </Form.Label>
+            <Col sm="9">
+              <Form.Control name="mortgagePeriod" value={this.state.mortgagePeriod} onChange={this.handleInputChange} />
+            </Col>
+          </Form.Group>
 
-          <label>Input Ratio per 1000 (default is 5.07):
-            <strong>{this.state.ratioPerThousand}</strong>
-          </label>
-          <br />
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              Input Ratio per 1000:
+            </Form.Label>
+            <Col sm="9">
+              <Form.Control name="ratioPerThousand" readOnly value={this.state.ratioPerThousand} />
+            </Col>
+          </Form.Group>
 
-          <label>Input Adjusted SQFT (default is 200):
-            <input
-              name="adjustedSQFT"
-              type="number"
-              value={this.state.adjustedSQFT}
-              onChange={this.handleInputChange} />
-          </label>
-        </form>
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              Input Adjusted SQFT:
+            </Form.Label>
+            <Col sm="9">
+              <Form.Control name="adjustedSQFT" value={this.state.adjustedSQFT} onChange={this.handleInputChange} />
+            </Col>
+          </Form.Group>
 
-        <div>Upload Sell CSV for Calculation</div>
-        <input
-          type="file"
-          placeholder='Upload Sell CSV...'
-          onChange={this.handleSellData}
-        />
-        <div>Upload Rental CSV as Reference Data</div>
-        <div>
-          <Button
-            as="input"
-            type="file"
-            placeholder='Upload Rental CSV...'
-            onChange={this.handleReferenceData}
-            multiple
-          />
-        </div>
-        <Button variant="info" onClick={this.getCSV}>Generate Result</Button>
-        {
-          this.state.results.length > 0 &&
-          <CSVLink
-            data={this.state.results}
-            filename='sell.csv'
-            onClick={this.cleanup}
-          >
-          Export Sell CSV File
-          </CSVLink>
-        }
-      </div>
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              Upload Sell CSV:
+            </Form.Label>
+            <Col sm="9">
+              <input
+                type="file"
+                placeholder='Upload Sell CSV...'
+                onChange={this.handleSellData}
+              />
+            </Col>
+          </Form.Group>
+
+          <Form.Group as={Row}>
+            <Form.Label column sm="3">
+              Upload Rental CSV:
+            </Form.Label>
+            <Col sm="9">
+              <Button
+                as="input"
+                type="file"
+                placeholder='Upload Rental CSV...'
+                onChange={this.handleReferenceData}
+                multiple
+              />
+            </Col>
+          </Form.Group>
+
+          <Row>
+          <Col sm="2">
+            <Button variant="info" onClick={this.getCSV}>Generate Result</Button>
+          </Col>
+          <Col sm="2">
+            {
+              this.state.results.length > 0 &&
+              <CSVLink
+                data={this.state.results}
+                filename='sell.csv'
+                onClick={this.cleanup}
+              >
+              Export Sell CSV File
+              </CSVLink>
+            }
+          </Col>
+          </Row>
+        </Form>
     );
   }
 }
