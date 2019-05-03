@@ -145,6 +145,9 @@ class SellCSV extends Component {
   }
 
   monthlyPayment(loanAmount, apr, mortgagePeriod) {
+    if (_.isNumber(apr) && _.isEqual(apr, 0)) {
+      return 0;
+    }
     const r = apr / 12;
     const n = mortgagePeriod * 12;
     const m = loanAmount * (r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
@@ -227,7 +230,7 @@ class SellCSV extends Component {
               Input Interest Rate (default is 4.5):
             </Form.Label>
             <Col sm="9">
-              <Form.Control name="interestRate" value={this.state.interestRate} onChange={this.handleInputChange} />
+              <Form.Control name="interestRate" type="number" value={this.state.interestRate} onChange={this.handleInputChange} />
             </Col>
           </Form.Group>
 
@@ -236,7 +239,7 @@ class SellCSV extends Component {
               mortgage Period:
             </Form.Label>
             <Col sm="9">
-              <Form.Control name="mortgagePeriod" value={this.state.mortgagePeriod} onChange={this.handleInputChange} />
+              <Form.Control name="mortgagePeriod" type="number" value={this.state.mortgagePeriod} onChange={this.handleInputChange} />
             </Col>
           </Form.Group>
 
@@ -245,7 +248,7 @@ class SellCSV extends Component {
               Input Ratio per 1000:
             </Form.Label>
             <Col sm="9">
-              <Form.Control name="ratioPerThousand" readOnly value={this.state.ratioPerThousand} />
+              <Form.Control name="ratioPerThousand" plaintext readOnly value={this.state.ratioPerThousand} />
             </Col>
           </Form.Group>
 
@@ -254,7 +257,7 @@ class SellCSV extends Component {
               Input Adjusted SQFT:
             </Form.Label>
             <Col sm="9">
-              <Form.Control name="adjustedSQFT" value={this.state.adjustedSQFT} onChange={this.handleInputChange} />
+              <Form.Control name="adjustedSQFT" type="number" value={this.state.adjustedSQFT} onChange={this.handleInputChange} />
             </Col>
           </Form.Group>
 
@@ -290,12 +293,13 @@ class SellCSV extends Component {
           <Col sm="2">
             <Button variant="info" onClick={this.getCSV}>Generate Result</Button>
           </Col>
-          <Col sm="2">
+          <Col sm="3">
             {
               this.state.results.length > 0 &&
               <CSVLink
+                className="btn btn-success"
                 data={this.state.results}
-                filename='sell.csv'
+                filename="sell.csv"
                 onClick={this.cleanup}
               >
               Export Sell CSV File
