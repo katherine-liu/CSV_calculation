@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import { CSVLink, CSVDownload } from "react-csv";
-import { Container, Row, Col, Form, Button } from 'react-bootstrap';
+import { CSVLink } from "react-csv";
+import { Row, Col, Form, Button } from 'react-bootstrap';
 import _ from 'lodash';
 
 class SellCSV extends Component {
@@ -12,7 +12,6 @@ class SellCSV extends Component {
       ratioPerThousand: 5.07,
       adjustedSQFT: 200,
       data: [],
-      rentalFileLists: [],
       referenceData: [],
       results: [],
     };
@@ -45,13 +44,13 @@ class SellCSV extends Component {
 
   convertToNumber(v) {
     if (_.isNil(v)) {
-      return;
+      return 0;
     }
     return _.toNumber(v.replace(/\$|,/g, ""));
   }
 
   cleanup = () => {
-    this.setState({data: [], rentalFileLists: [], referenceData: [], results: []});
+    this.setState({data: [], referenceData: [], results: []});
   }
 
   financeCost = (row) => {
@@ -107,12 +106,12 @@ class SellCSV extends Component {
   }
 
   nominalAmount = (row) => {
-    const currentSQFT = _.get(row, 'rentalAvgIncome');
+    const rentalAvgIncome = _.get(row, 'rentalAvgIncome');
     const totalCost = _.get(row, 'totalCost');
-    if (_.isNil(currentSQFT) || _.isNil(totalCost)) {
+    if (_.isNil(rentalAvgIncome) || _.isNil(totalCost)) {
       return;
     }
-    row.nominalAmount = _.round(currentSQFT - totalCost, 2);
+    row.nominalAmount = _.round(rentalAvgIncome - totalCost, 2);
     return row;
   }
 
@@ -151,7 +150,7 @@ class SellCSV extends Component {
     const r = apr / 12;
     const n = mortgagePeriod * 12;
     const m = loanAmount * (r * (Math.pow((1 + r), n))) / (Math.pow((1 + r), n) - 1);
-    return Math.round(m * 100) / 100;
+    return Math.round(m, 2)
   }
 
   paymentAmount = (row) => {
@@ -279,8 +278,7 @@ class SellCSV extends Component {
               Upload Rental CSV:
             </Form.Label>
             <Col sm="9">
-              <Button
-                as="input"
+              <input
                 type="file"
                 placeholder='Upload Rental CSV...'
                 onChange={this.handleReferenceData}
